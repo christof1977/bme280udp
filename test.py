@@ -162,9 +162,7 @@ def main():
                     ret = udpRemote(json_string, addr="heizungeg", port=5023)
                     if(ret!=-1):
                         try:
-                            print(ret)
-                            print(json.loads(ret))
-                            #print(json.dumps(json.loads(ret),indent=4).encode('utf8'))
+                            print(json.dumps(json.loads(ret),indent=4))
                         except Exception as e:
                             print("ups:", e)
             except KeyboardInterrupt:
