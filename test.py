@@ -11,12 +11,11 @@ import logging
 #logging.basicConfig(level=logging.DEBUG)
 
 udpTimeout = 4
-ADDR = 'heizungeg.local'
+ADDR = 'heizungeg'
 PORT = 5023
 
 def getcmds():
-    valid_cmds = ['getData',
-                  'getTemperature',
+    valid_cmds = ['getTemperature',
                   'getHumidity',
                   'getPressure']
 
@@ -26,10 +25,9 @@ def getcmds():
 def hilf():
     print('')
     print('*******************************')
-    print('heizung console remote tool')
+    print('Test tool for BME280 UDP server')
     print('')
     print('Commands:')
-    print('d  -> get Data')
     print('t  -> get Temperature')
     print('h  -> get Humidity')
     print('p  -> get Pressure')
@@ -96,39 +94,6 @@ def udpRemote(msg, **kwargs):
         logging.info(str(e))
         return -1
 
-def get_room():
-    print('')
-    print('w -> Wohnzimmer')
-    print('s -> Schlafzimmer')
-    print('a -> Arbeitszimmer')
-    print('k -> Küche')
-    print('b -> Bad')
-    room = getch()
-    rooms = {"w":"WZ",
-             "s":"SZ",
-             "a":"AZ",
-             "k":"K",
-             "b":"BadEG"}
-    if room in rooms.keys():
-        print(rooms[room])
-        return(rooms[room])
-    else:
-        return("WZ")
-
-def get_mode():
-    print('')
-    print('0 -> aus')
-    print('1 -> an')
-    print('a -> auto')
-    mode = getch()
-    if(mode == "0"):
-        return("off")
-    elif(mode == "1"):
-        return("on")
-    else:
-        return("auto")
-
-
 def main():
     addr = 'heizung'
     port = 5005
@@ -142,9 +107,7 @@ def main():
             try:
                 cmd = getch()
                 valid = 1
-                if cmd == "d":
-                    json_string = '{"command" : "getData"}\n'
-                elif cmd == "t":
+                if cmd == "t":
                     json_string = '{"command" : "getTemperature"}\n'
                 elif cmd == "h":
                     json_string = '{"command" : "getHumidity"}\n'

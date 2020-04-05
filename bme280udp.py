@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+'''
+UDP Serveri for aquiring data from the Bosch sensor BME280
+Sensor is connected to Rapsi Pi via I2C Bus 1, Addr. 0x76.
+Server opens an UDP socket on port 5023 (changeable) and waits for incoming JSON requests.
+
+Valid requests:
+{"command" : "getTemperature"}
+{"command" : "getHumidity"}
+{"command" : "getPressure"}
+
+The answers are then:
+{"answer":"getTemperature","value":"19.56 C"})
+{"answer":"getHumidity","value":"32.15% rH"})
+{"answer":"getPressure","value":"992.38 hPa"})
+'''
+
+
 import smbus2
 import bme280
 import socket
-import os
-#import RPi.GPIO as GPIO
-import sys
 import time
-import datetime
-#import configparser
 import json
-#from timer import timer
 import syslog
-#from libby import tempsensors
-#import mysql.connector
 import threading
 from threading import Thread
-import urllib
-import urllib.request
 import logging
 
 
@@ -29,12 +36,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 
-# the compensated_reading class has the following attributes
-#print(data.id)
-#print(data.timestamp)
-#print(data.pressure)
-#print(data.humidity)
-
 
 class bme280udp(threading.Thread):
     def __init__(self):
@@ -44,23 +45,10 @@ class bme280udp(threading.Thread):
         self.hostname = socket.gethostname()
         self.basehost = self.hostname 
         
-        #self.mysql_success = False
-        #self.mysql_start()
-
-        #self.set_hw()
-        
         self.bus = smbus2.SMBus(1)
         self.calibration_params = bme280.load_calibration_params(self.bus, bme280_address)
         
-        #Starting Threads
-
-        #timerT = threading.Thread(target=self.timer_operation)
-        #itimerT.setDaemon(True)
-        #timerT.start()
-        #threading.Thread(target=self.log_state).start()
         self.udpServer()
-
-
 
     def udpServer(self):
         logging.info("Starting BME280 UDP-Server at " + self.basehost + ":" + str(udp_port))
@@ -77,7 +65,6 @@ class bme280udp(threading.Thread):
         while(not self.t_stop.is_set()):
             try:
                 data, addr = self.udpSock.recvfrom( 1024 )# Puffer-Groesse ist 1024 Bytes.
-                #logging.debug("Kimm ja scho")
                 ret = self.parseCmd(data) # Abfrage der Fernbedienung (UDP-Server), der Rest passiert per Interrupt/Event
                 self.udpSock.sendto(str(ret).encode('utf-8'), addr)
             except Exception as e:
@@ -96,20 +83,15 @@ class bme280udp(threading.Thread):
         if self.t_stop.is_set():
             logging.info("Ausgetimed!")
 
-
     def parseCmd(self, data):
         data = data.decode()
         try:
             jcmd = json.loads(data)
-            #logging.debug(jcmd['command'])
-            #logging.debug(jcmd)
         except:
             logging.warning("Das ist mal kein JSON, pff!")
             ret = json.dumps({"answer": "Kaa JSON Dings!"})
             return(ret)
-        if(jcmd['command'] == "getData"):
-            ret = self.get_data()
-        elif(jcmd['command'] == "getTemperature"):
+        if(jcmd['command'] == "getTemperature"):
             ret = self.get_temperature()
         elif(jcmd['command'] == "getHumidity"):
             ret = self.get_humidity()
@@ -117,20 +99,12 @@ class bme280udp(threading.Thread):
             ret = self.get_pressure()
         else:
              ret = json.dumps({"answer":"Fehler","Wert":"Kein gültiges Kommando"})
-        #logging.debug(ret)
+        logging.debug(ret)
         return(ret)
-
 
     def get_sensor_data(self):
         data = bme280.sample(self.bus, bme280_address, self.calibration_params)
         return(data)
-
-    def get_data(self):
-        # the sample method will take a single reading and return a
-        # compensated_reading object
-        data = self.get_sensor_data()
-        return(json.dumps({"answer":"getData","value":data}))
-        # there is a handy string representation too
 
     def get_temperature(self):
         data = self.get_sensor_data()
@@ -149,6 +123,7 @@ class bme280udp(threading.Thread):
     def run(self):
         while True:
             try:
+                time.sleep(1)
                 pass
             except KeyboardInterrupt: # CTRL+C exiti
                 self.stop()
