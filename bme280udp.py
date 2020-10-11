@@ -72,11 +72,11 @@ class bme280udp(threading.Thread):
             message["measurement"]["pressFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
             message["measurement"]["humFlur"]["Value"] = self.get_humidity()
             message["measurement"]["humFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
-            logging.info(message)
+            logging.debug(message)
 
             self.udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
 
-            self.t_stop.wait(2)
+            self.t_stop.wait(20)
 
     def get_sensor_data(self):
         data = bme280.sample(self.bus, bme280_address, self.calibration_params)
