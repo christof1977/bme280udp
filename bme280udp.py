@@ -60,7 +60,7 @@ class bme280udp(threading.Thread):
 
     def _udpServer(self):
         logging.info("Server laaft")
-        store = 0
+        store = 1
         message = {"measurement":{"tempFlur":{"Name":"Temperatur Flur","Floor":"EG","Value":0,"Type":"Temperature","Unit":"°C","Timestamp":"","Store":store},
                                   "pressFlur":{"Name":"Luftdruck Flur","Floor":"EG","Value":0,"Type":"Pressure","Unit":"mbar","Timestamp":"","Store":store},
                                   "humFlur":{"Name":"Luftfeuchte Flur","Floor":"EG","Value":0,"Type":"Humidity","Unit":"% rH","Timestamp":"","Store":store}
