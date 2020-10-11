@@ -30,11 +30,9 @@ import logging
 
 
 bme280_address = 0x76
-udp_port = 5023
+udp_port = 6664
 
 logging.basicConfig(level=logging.INFO)
-
-
 
 
 class bme280udp(threading.Thread):
@@ -43,7 +41,7 @@ class bme280udp(threading.Thread):
         logging.info("Starting serverthread as " + threading.currentThread().getName())
         self.t_stop = threading.Event()
         self.hostname = socket.gethostname()
-        self.basehost = self.hostname 
+        self.basehost = self.hostname + '.local'
         
         self.bus = smbus2.SMBus(1)
         self.calibration_params = bme280.load_calibration_params(self.bus, bme280_address)
@@ -51,56 +49,34 @@ class bme280udp(threading.Thread):
         self.udpServer()
 
     def udpServer(self):
-        logging.info("Starting BME280 UDP-Server at " + self.basehost + ":" + str(udp_port))
-        self.udpSock = socket.socket( socket.AF_INET,  socket.SOCK_DGRAM )
-        self.udpSock.bind( (self.basehost,udp_port) )
+        self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.udpSock.settimeout(0.1)
 
-        #self.t_stop = threading.Event()
         udpT = threading.Thread(target=self._udpServer)
         udpT.setDaemon(True)
         udpT.start()
 
     def _udpServer(self):
         logging.info("Server laaft")
+        store = 0
+        message = {"measurement":{"tempFlur":{"Name":"Temperatur Flur","Floor":"EG","Value":0,"Type":"Temperature","Unit":"°C","Timestamp":"","Store":store},
+                                  "pressFlur":{"Name":"Luftdruck Flur","Floor":"EG","Value":0,"Type":"Pressure","Unit":"mbar","Timestamp":"","Store":store},
+                                  "humFlur":{"Name":"Luftfeuchte Flur","Floor":"EG","Value":0,"Type":"Humidity","Unit":"% rH","Timestamp":"","Store":store}
+                                  }}
         while(not self.t_stop.is_set()):
-            try:
-                data, addr = self.udpSock.recvfrom( 1024 )# Puffer-Groesse ist 1024 Bytes.
-                ret = self.parseCmd(data) # Abfrage der Fernbedienung (UDP-Server), der Rest passiert per Interrupt/Event
-                self.udpSock.sendto(str(ret).encode('utf-8'), addr)
-            except Exception as e:
-                try:
-                    self.udpSock.sendto(str('{"answer":"error"}').encode('utf-8'), addr)
-                    logging.warning("Uiui, beim UDP senden/empfangen hat's kracht!" + str(e))
-                except Exception as o:
-                    logging.warning("Uiui, beim UDP senden/empfangen hat's richtig kracht!" + str(o))
+            message["measurement"]["tempFlur"]["Value"] = self.get_temperature()
+            message["measurement"]["tempFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
+            message["measurement"]["pressFlur"]["Value"] = self.get_pressure()
+            message["measurement"]["pressFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
+            message["measurement"]["humFlur"]["Value"] = self.get_humidity()
+            message["measurement"]["humFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
+            logging.info(message)
 
-    def timer_operation(self):
-        logging.info("Starting Timeroperationthread as " + threading.currentThread().getName())
-        while(not self.t_stop.is_set()):
-            self.get_data()
-            self.t_stop.wait(60)
-            #print("tick")
-        if self.t_stop.is_set():
-            logging.info("Ausgetimed!")
+            self.udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
 
-    def parseCmd(self, data):
-        data = data.decode()
-        try:
-            jcmd = json.loads(data)
-        except:
-            logging.warning("Das ist mal kein JSON, pff!")
-            ret = json.dumps({"answer": "Kaa JSON Dings!"})
-            return(ret)
-        if(jcmd['command'] == "getTemperature"):
-            ret = self.get_temperature()
-        elif(jcmd['command'] == "getHumidity"):
-            ret = self.get_humidity()
-        elif(jcmd['command'] == "getPressure"):
-            ret = self.get_pressure()
-        else:
-             ret = json.dumps({"answer":"Fehler","Wert":"Kein gültiges Kommando"})
-        logging.debug(ret)
-        return(ret)
+            self.t_stop.wait(2)
 
     def get_sensor_data(self):
         data = bme280.sample(self.bus, bme280_address, self.calibration_params)
@@ -108,15 +84,26 @@ class bme280udp(threading.Thread):
 
     def get_temperature(self):
         data = self.get_sensor_data()
-        ret = json.dumps({"answer":"getTemperature","value":str(round(data.temperature,2))+" C"})
-        return(ret)
-
+        return(round(data.temperature,2))
 
     def get_humidity(self):
         data = self.get_sensor_data()
-        return(json.dumps({"answer":"getHumidity","value":str(round(data.humidity,2))+"% rH"}))
+        return(round(data.humidity,2))
 
     def get_pressure(self):
+        data = self.get_sensor_data()
+        return(round(data.pressure,2))
+
+    def get_temperature_str(self):
+        data = self.get_sensor_data()
+        ret = json.dumps({"answer":"getTemperature","value":str(round(data.temperature,2))+" C"})
+        return(ret)
+
+    def get_humidity_str(self):
+        data = self.get_sensor_data()
+        return(json.dumps({"answer":"getHumidity","value":str(round(data.humidity,2))+"% rH"}))
+
+    def get_pressure_str(self):
         data = self.get_sensor_data()
         return(json.dumps({"answer":"getPressure","value":str(round(data.pressure,2))+" hPa"}))
 
