@@ -49,16 +49,15 @@ class bme280udp(threading.Thread):
         self.udpServer()
 
     def udpServer(self):
-        self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.udpSock.settimeout(0.1)
-
         udpT = threading.Thread(target=self._udpServer)
         udpT.setDaemon(True)
         udpT.start()
 
     def _udpServer(self):
+        udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        udpSock.settimeout(0.1)
         logging.info("Server laaft")
         store = 1
         message = {"measurement":{"tempFlur":{"Name":"Temperatur Flur","Floor":"EG","Value":0,"Type":"Temperature","Unit":"°C","Timestamp":"","Store":store},
@@ -73,9 +72,7 @@ class bme280udp(threading.Thread):
             message["measurement"]["humFlur"]["Value"] = self.get_humidity()
             message["measurement"]["humFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
             logging.debug(message)
-
-            self.udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
-
+            udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
             self.t_stop.wait(20)
 
     def get_sensor_data(self):
