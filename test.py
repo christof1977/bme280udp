@@ -95,8 +95,8 @@ def udpRemote(msg, **kwargs):
         return -1
 
 def main():
-    addr = 'heizung'
-    port = 5005
+    #addr = 'heizung'
+    #port = 5005
 
     valid_cmds = getcmds()
 
@@ -122,7 +122,7 @@ def main():
                     logging.info("Invalid command")
                     valid = 0
                 if valid:
-                    ret = udpRemote(json_string, addr="heizungeg", port=5023)
+                    ret = udpRemote(json_string, addr="heizungeg.home", port=5023)
                     if(ret!=-1):
                         try:
                             print(json.dumps(json.loads(ret),indent=4))

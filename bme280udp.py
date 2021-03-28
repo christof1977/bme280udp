@@ -33,6 +33,7 @@ bme280_address = 0x76
 udp_port = 6664
 
 logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 class bme280udp(threading.Thread):
@@ -40,8 +41,6 @@ class bme280udp(threading.Thread):
         threading.Thread.__init__(self)
         logging.info("Starting serverthread as " + threading.currentThread().getName())
         self.t_stop = threading.Event()
-        self.hostname = socket.gethostname()
-        self.basehost = self.hostname + '.local'
         
         self.bus = smbus2.SMBus(1)
         self.calibration_params = bme280.load_calibration_params(self.bus, bme280_address)
@@ -65,6 +64,7 @@ class bme280udp(threading.Thread):
                                   "humFlur":{"Name":"Luftfeuchte Flur","Floor":"EG","Value":0,"Type":"Humidity","Unit":"% rH","Timestamp":"","Store":store}
                                   }}
         while(not self.t_stop.is_set()):
+            self.t_stop.wait(20)
             message["measurement"]["tempFlur"]["Value"] = self.get_temperature()
             message["measurement"]["tempFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
             message["measurement"]["pressFlur"]["Value"] = self.get_pressure()
@@ -72,11 +72,12 @@ class bme280udp(threading.Thread):
             message["measurement"]["humFlur"]["Value"] = self.get_humidity()
             message["measurement"]["humFlur"]["Timestamp"] = time.strftime('%Y-%m-%d %H:%M:%S')
             logging.debug(message)
-            udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
-            self.t_stop.wait(20)
+            ret = udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
+            logging.debug("Message sent %s", ret)
 
     def get_sensor_data(self):
         data = bme280.sample(self.bus, bme280_address, self.calibration_params)
+        logging.debug(data)
         return(data)
 
     def get_temperature(self):

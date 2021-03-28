@@ -1,0 +1,15 @@
+[Unit]
+Description=BME280 UDP Server
+After=network-online.target
+[Service]
+Type=simple
+User=heizung
+Group=heizung
+UMask=007
+ExecStart=/home/heizung/bme280udp/bme280udp.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
