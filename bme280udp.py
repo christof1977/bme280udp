@@ -27,6 +27,8 @@ import syslog
 import threading
 from threading import Thread
 import logging
+import paho.mqtt.publish as publish
+from config import MQTTHOST, MQTTUSER, MQTTPASS
 
 
 bme280_address = 0x76
@@ -41,6 +43,11 @@ class bme280udp(threading.Thread):
         threading.Thread.__init__(self)
         logging.info("Starting serverthread as " + threading.currentThread().getName())
         self.t_stop = threading.Event()
+
+        self.hostname = "heizungeg"
+        self.mqtthost = MQTTHOST
+        self.mqttuser = MQTTUSER
+        self.mqttpass = MQTTPASS
         
         self.bus = smbus2.SMBus(1)
         self.calibration_params = bme280.load_calibration_params(self.bus, bme280_address)
@@ -74,6 +81,9 @@ class bme280udp(threading.Thread):
             logging.debug(message)
             ret = udpSock.sendto(json.dumps(message).encode(), ("<broadcast>", udp_port))
             logging.debug("Message sent %s", ret)
+            publish.single("EG/Flur/Temperature", self.get_temperature(), hostname=self.mqtthost, client_id=self.hostname,auth = {"username":self.mqttuser, "password":self.mqttpass})
+            publish.single("EG/Flur/Pressure", self.get_pressure(), hostname=self.mqtthost, client_id=self.hostname,auth = {"username":self.mqttuser, "password":self.mqttpass})
+            publish.single("EG/Flur/Humidity", self.get_humidity(), hostname=self.mqtthost, client_id=self.hostname,auth = {"username":self.mqttuser, "password":self.mqttpass})
 
     def get_sensor_data(self):
         data = bme280.sample(self.bus, bme280_address, self.calibration_params)
