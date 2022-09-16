@@ -1,6 +1,7 @@
 [Unit]
 Description=BME280 UDP Server
 After=network-online.target
+After=hzent.target
 [Service]
 Type=simple
 User=heizung
