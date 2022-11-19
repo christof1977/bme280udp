@@ -92,28 +92,28 @@ class bme280udp(threading.Thread):
 
     def get_temperature(self):
         data = self.get_sensor_data()
-        return(round(data.temperature,2))
+        return(round(data.temperature,1))
 
     def get_humidity(self):
         data = self.get_sensor_data()
-        return(round(data.humidity,2))
+        return(round(data.humidity,1))
 
     def get_pressure(self):
         data = self.get_sensor_data()
-        return(round(data.pressure,2))
+        return(round(data.pressure,1))
 
     def get_temperature_str(self):
         data = self.get_sensor_data()
-        ret = json.dumps({"answer":"getTemperature","value":str(round(data.temperature,2))+" C"})
+        ret = json.dumps({"answer":"getTemperature","value":str(round(data.temperature,1))+" C"})
         return(ret)
 
     def get_humidity_str(self):
         data = self.get_sensor_data()
-        return(json.dumps({"answer":"getHumidity","value":str(round(data.humidity,2))+"% rH"}))
+        return(json.dumps({"answer":"getHumidity","value":str(round(data.humidity,1))+"% rH"}))
 
     def get_pressure_str(self):
         data = self.get_sensor_data()
-        return(json.dumps({"answer":"getPressure","value":str(round(data.pressure,2))+" hPa"}))
+        return(json.dumps({"answer":"getPressure","value":str(round(data.pressure,1))+" hPa"}))
 
     def run(self):
         while True:
