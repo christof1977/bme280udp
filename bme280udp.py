@@ -65,7 +65,7 @@ class bme280udp(threading.Thread):
         udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         udpSock.settimeout(0.1)
         logging.info("Server laaft")
-        store = 1
+        store = 0
         message = {"measurement":{"tempFlur":{"Name":"Temperatur Flur","Floor":"EG","Value":0,"Type":"Temperature","Unit":"°C","Timestamp":"","Store":store},
                                   "pressFlur":{"Name":"Luftdruck Flur","Floor":"EG","Value":0,"Type":"Pressure","Unit":"mbar","Timestamp":"","Store":store},
                                   "humFlur":{"Name":"Luftfeuchte Flur","Floor":"EG","Value":0,"Type":"Humidity","Unit":"% rH","Timestamp":"","Store":store}
